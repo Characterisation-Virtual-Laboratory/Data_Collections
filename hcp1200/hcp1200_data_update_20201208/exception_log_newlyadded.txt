@@ -1,0 +1,4 @@
+“hcp1200_update_file_list.txt doesn’t fit into fix or fixextended directories”
+“md5sum-file-check.txt doesn’t fit into fix or fixextended directories”
+“hcp1200_update_file_list.txt doesn’t fit into fix or fixextended directories”
+“md5sum-file-check.txt doesn’t fit into fix or fixextended directories”
