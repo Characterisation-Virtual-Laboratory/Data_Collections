@@ -1,0 +1,14 @@
+# Make a directory in fs03 for the ISIC data
+mkdir /fs03/isic-2019/isic-2019-20201002/data
+
+# download ISIC data using sbatch file with links generated via curlwget Chrome tool
+# This also generates md5sum checks and metadata
+sbatch load-isic.sh
+
+# Decompress files
+unzip *.zip
+
+# Add terms and conditions as written here:
+https://challenge2019.isic-archive.com/data.html
+
+# Update this readme if relevant
