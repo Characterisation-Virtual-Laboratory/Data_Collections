@@ -1,0 +1,19 @@
+# Instructions to download the Stanford Natural Language Processing Corpus on M3
+# https://nlp.stanford.edu/projects/snli/
+# This is one of the easier datasets to download!
+
+# Make directory for the dataset
+mkdir /mnt/reference/snli-corpus/snli-corpus_20210421
+cd /mnt/reference/snli-corpus/snli-corpus_20210421
+
+# Download the data zip
+wget https://nlp.stanford.edu/projects/snli/snli_1.0.zip
+
+# Unzip the data zip file
+unzip snli_1.0.zip
+
+# Remove the MACOSX file because we're not on MACOSX
+rm -rf __MACOSX
+
+# This dataset comes with it's own descriptive README file
+# With homepage link and terms and conditions of use
