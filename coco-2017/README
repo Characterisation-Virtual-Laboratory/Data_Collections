@@ -1,0 +1,105 @@
+# This file describes steps taken to download MS COCO onto M3
+# You can find the dataset here: https://cocodataset.org/#download
+
+# make directories for the data
+mkdir /mnt/reference/coco-2017/coco-2017_20210713/data/annotations
+mkdir /mnt/reference/coco-2017/coco-2017_20210713/data/images
+
+# download the annotations
+cd mkdir /mnt/reference/coco-2017/coco-2017_20210713/data/annotations
+wget http://images.cocodataset.org/annotations/annotations_trainval2017.zip
+wget http://images.cocodataset.org/annotations/stuff_annotations_trainval2017.zip
+wget http://images.cocodataset.org/annotations/panoptic_annotations_trainval2017.zip
+wget http://images.cocodataset.org/annotations/image_info_test2017.zip
+wget http://images.cocodataset.org/annotations/image_info_unlabeled2017.zip
+
+# unzip the annotations
+unzip annotations_trainval2017.zip -d trainval2017
+unzip image_info_test2017.zip -d image_info_test_2017
+unzip image_info_unlabeled2017.zip -d image_info_unlabeled
+unzip panoptic_annotations_trainval2017.zip -d panoptic_annotations_trainval2017
+unzip stuff_annotations_trainval2017.zip -d stuff_annotations_trainval2017
+
+# remove the zip files
+rm annotations_trainval2017.zip       
+rm image_info_test2017.zip     
+rm image_info_unlabeled2017.zip
+rm panoptic_annotations_trainval2017.zip
+rm stuff_annotations_trainval2017.zip
+
+# unzip and remove files within annotation directories
+cd /mnt/reference/coco-2017/coco-2017_20210713/data/annotations/stuff_annotations_trainval2017/annotations
+unzip stuff_train2017_pixelmaps.zip
+unzip stuff_val2017_pixelmaps.zip
+rm stuff_train2017_pixelmaps.zip 
+rm stuff_val2017_pixelmaps.zip
+
+cd /mnt/reference/coco-2017/coco-2017_20210713/data/annotations/panoptic_annotations_trainval2017/annotations
+unzip panoptic_val2017.zip
+unzip panoptic_train2017.zip
+rm panoptic_val2017.zip
+rm panoptic_train2017.zip
+
+# download the images
+cd /mnt/reference/coco-2017/coco-2017_20210713/data/images
+wget http://images.cocodataset.org/zips/train2017.zip
+wget http://images.cocodataset.org/zips/val2017.zip
+wget http://images.cocodataset.org/zips/test2017.zip
+wget http://images.cocodataset.org/zips/unlabeled2017.zip
+
+# unzip the images
+unzip test2017.zip
+unzip train2017.zip
+unzip unlabeled2017.zip
+unzip val2017.zip
+
+# remove the zip files
+rm test2017.zip                                        
+rm train2017.zip                                       
+rm unlabeled2017.zip                                   
+rm val2017.zip
+
+# COCO has some directories qith 40k - 118k files in them.
+# We should organise that into managable subdirectories.
+
+cd /mnt/reference/coco-2017/coco-2017_20210713/data/images/train2017
+mkdir train2017-1
+mkdir train2017-2
+mkdir train2017-3
+
+for file in `ls | head -n 40000`; do mv $file train2017-1; done
+for file in `ls | head -n 40000`; do mv $file train2017-2; done
+for file in `ls | head -n 38287`; do mv $file train2017-3; done
+
+cd /mnt/reference/coco-2017/coco-2017_20210713/data/images/unlabeled2017
+mkdir unlabeled2017-1
+mkdir unlabeled2017-2
+mkdir unlabeled2017-3
+
+for file in `ls | head -n 40000`; do mv $file unlabeled2017-1; done
+for file in `ls | head -n 40000`; do mv $file unlabeled2017-2; done
+for file in `ls | head -n 43403`; do mv $file unlabeled2017-3; done
+
+# you should have a file structure of:
+ 
+        /mnt/reference/coco-2017/
+        `-- coco-2017_20210713
+            |-- coco_data_use_terms_and_conditions.txt
+            `-- data
+                |-- annotations
+                |   |-- image_info_test_2017
+                |   |-- image_info_unlabeled
+                |   |-- panoptic_annotations_trainval2017
+                |   |-- stuff_annotations_trainval2017
+                |   `-- trainval2017
+            `-- images
+                |-- test2017
+                |-- train2017
+                |   |-- train2017-1
+                |   |-- train2017-2
+                |   `-- train2017-3
+                |-- unlabeled2017
+                |   |-- unlabeled2017-1
+                |   |-- unlabeled2017-2
+                |   `-- unlabeled2017-3
+                `-- val2017
