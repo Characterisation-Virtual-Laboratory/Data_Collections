@@ -1,0 +1,11 @@
+# Follow instructions in the GitHub repository in order
+# to download the 2.2T of datasets required for Alphafold.
+
+# i.e.:
+git clone https://github.com/deepmind/alphafold.git
+scripts/download_all_data.sh <DOWNLOAD_DIR>
+
+# This downloads and unzips the files.
+# I ran this overnight and it was done by the morning.
+# You will need to specify the data download directory 
+# if using the AlphaFold model. 
