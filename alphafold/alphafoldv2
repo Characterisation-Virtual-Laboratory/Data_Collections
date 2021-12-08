@@ -1,0 +1,49 @@
+# alphafold v2 data 
+
+# clone the git repo somewhere 
+cd /scratch/nq46/ksco0005/
+git clone git@github.com:deepmind/alphafold.git
+cd alphafold
+git fetch origin main
+
+# create directory for new version
+mkdir /mnt/reference/alphafold/alphafold_20211129
+
+# We are going to create some symlinks to the old data, as well as download some new data
+# as explained under the heading "Updating existing AlphaFold installation to include AlphaFold-Multimers"
+# in the repository here: https://github.com/deepmind/alphafold#updating-existing-alphafold-installation-to-include-alphafold-multimers 
+
+# assuming you're still in your copy of the alphafold repository
+# you need aria2c for faster download speeds
+module load aria2c/1.35.0
+
+# download uniprot
+scripts/download_uniprot.sh /mnt/reference/alphafold/alphafold_20211129
+
+# download PDB and PDB SeqRes
+scripts/download_pdb_mmcif.sh /mnt/reference/alphafold/alphafold_20211129
+
+scripts/download_pdb_seqres.sh /mnt/reference/alphafold/alphafold_20211129
+
+# Download new parameters
+scripts/download_alphafold_params.sh /mnt/reference/alphafold/alphafold_20211129
+
+# symlink existing datasets from /mnt/alphafold/alphafold_20210726
+# excluding pdb_mmcif and params
+cd /mnt/reference/alphafold/alphafold_20211129
+
+ln -s /mnt/reference/alphafold/alphafold_20210726/bfd ./bfd
+ln -s /mnt/reference/alphafold/alphafold_20210726/mgnify ./mgnify
+ln -s /mnt/reference/alphafold/alphafold_20210726/pdb70 ./pdb70
+ln -s /mnt/reference/alphafold/alphafold_20210726/uniclust30 ./uniclust30
+ln -s /mnt/reference/alphafold/alphafold_20210726/uniref90 ./uniref90
+
+# copy the terms of use
+cp /mnt/reference/alphafold/alphafold_20210726/alphafold_Terms_of_Use.txt .
+ 
+# Change the group access to the directory to match the group name in Karaage
+chgrp -R coco-2017 /mnt/reference/alphafold/alphafold_20211129
+ 
+# Ensure the group has read and execute permission.
+chmod -R 750 /mnt/reference/alphafold/alphafold_20211129
+
