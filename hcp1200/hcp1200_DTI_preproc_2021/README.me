@@ -1,0 +1,131 @@
+The following outlines some major details about the DTI data processing steps for the hcp1200 data on MASSIVE. It is developed by Dr. Stuart Oldham. If using this data please make sure to cite (Oldham et al., 2019) and (Arnatkevičiūtė et al., 2021).
+
+Pre-processing
+==============
+
+HCP data comes minimally pre-processed, see the following papers for details (Glasser et al., 2013; Sotiropoulos et al., 2013), and also check out the HCP manual (https://www.humanconnectome.org/storage/app/media/documentation/s1200/HCP_S1200_Release_Reference_Manual.pdf; this will also detail naming conventions used). Further processing was conducted using the HCP_TRACT_PREPRO.sh script. The primary pieces of software used for this step are Freesurfer (Fischl, 2012), MRtrix3 (Tournier et al., 2019), FSL (Jenkinson, Beckmann, Behrens, Woolrich, & Smith, 2012), and MATLAB.
+
+This additional level of pre-processing we do generates parcellations for use in making connectomes. Parcellations are made by having a parcellation defined on the cortical surface of fsaverage as an .annot file. The following cortical parcellations are included:
+aparc = a 34 parcels per hemisphere parcellation based on folding patterns (Desikan et al., 2006)
+
+HCPMMP1 = a 180 parcels per hemisphere parcellation derived from multimodal HCP data (Glasser et al., 2016).
+
+randomXXX = a random parcellation of XXX regions (where XXX is either 200 or 500) across the cortex, with an equal number of parcel in left and right hemispheres (Notter, 2019). 
+
+ SchaeferXXX_YYnet = a parcellation of XXX regions (where XXX is a number between 100 and 1000 in 100 increment) across the cortex, based on functional data, with an equal number of parcels in left and right hemispheres. The parcellation is matched to either the Yeo 7 or 17 (YY) network parcellation (Schaefer et al., 2018).
+
+Additionally, we also define the following subcortical parcellations:
+fslatlas20 = A subcortical parcellation of three striatal (Tziortzi et al., 2014) and seven thalamic (Behrens, Johansen-Berg, et al., 2003; Behrens, Woolrich, et al., 2003) regions per hemisphere.
+
+aseg/first = a seven region subdivision of the subcortex as defined by Freesurfer (Fischl et al., 2002) or FSL .
+
+Cortical and subcortical parcellations can combined, and are indicated as such by “AND” or “+” in the file name (e.g., aparc+first, random500ANDfslatlas20). As an additionally naming scheme, parcellations are marked as either “acpc” or “standard”. “acpc” is a parcellation registered to a subjects own space while “standard” is registered to MNI space (e.g., random500ANDfslatlas20_acpc).
+
+Parcellations were saved as .annot files for each subject (located in  /projects/hcp1200_processed/2021/Preprocessed/SUBJECTID/T1w/ SUBJECTID/label) and a .nii file were saved to the /projects/hcp1200_processed/2021/Preprocessed/SUBJECTID/T1w/parc directory
+
+The following gives an example description of parcellation processing, adapted from the methods sections of (Oldham et al., 2019) and (Oldham et al., 2020).
+
+The first parcellated the brain into 34 cortical (Desikan et al., 2006) and seven subcortical regions (Fischl et al., 2002) per hemisphere, for a total of 82 regions. The second parcellation approach randomly divided each hemisphere into 100 approximately equal sized cortical regions (Notter, 2019) and was combined with a subcoritcal parcellation of three striatal (Tziortzi et al., 2014) and seven thalamic (Behrens, Johansen-Berg, et al., 2003; Behrens, Woolrich, et al., 2003) regions for a total of 220 regions. The final parcellation was based on a recently developed 360-region cortical parcellation (Glasser et al., 2016). This cortical parcellation was combined with the same subcortical regions as the 220 region parcellation to produce a final parcellation of 380 regions. Cortical parcellations were generated on the Freesurfer-estimated surface models and projected out to the volume. The volumetric cortical parcellation was then combined with the subcortical regions. The combined parcellation image was then transformed into each individual’s native dMRI space by first coregistering that person’s diffusion image to the T1 using a linear transform (using FSL’s FLIRT) and then applying the inverse of this transform to the parcellaion image.
+
+Not all connectomes for all parcellations have been generated. Only the following data already exists:
+- HCPMMP1ANDfslatlas20
+- aparc+aseg
+- aparc+first
+- random200
+- random500
+- random200ANDfslatlas20
+- random500AND fslatlas20
+- Schaefer200_17net
+- Schaefer400_17net
+- Schaefer900_17net
+
+Pre-processed data can be found in /projects/hcp1200_processed/2021/Preprocessed/. See the HCP_TRACT_PREPRO.sh script for finer details. The script can be run as an array job in slurm by running:
+sbatch ./HCP_TRACT_PREPRO.sh
+
+Processing
+==========
+
+Processing of the data was done with the HCP_TRACT.sh script. This performed Constrained Spherical Deconvolution and also calculated diffusion tensors, which were subsequently used to run tractography, and then construct connectomes. The primary pieces of software used for this step are Freesurfer (Fischl, 2012), MRtrix3 (Tournier et al., 2019), FSL (Jenkinson et al., 2012), and MATLAB.
+
+The following key files are produced by this step:
+- dwi.mif = diffusion data.
+- dt.mif = diffusion tensors for the diffusion data.
+- fa.mif = fractional anisotropy for the diffusion data.
+- directions.mif = primary eigenvector of the diffusion data.
+- FOD.mif = Fibre Orientation Distributions of the diffusion data.
+- ACT.nii = A five tissue type image for use with anatomically constrained tractography.
+- streamlines_FACT.tck = tractogram produced with FACT (deterministic).
+- streamlines_iFOD2.tck = tractogram produced with iFOD2 (probabilistic).
+- SIFT2_weights_FACT.txt = SIFT2 weights for the FACT tractogram.
+- SIFT2_weights_iFOD2.txt = SIFT2 weights for the iFOD2 tractogram.
+
+Connectomes were primarily constructed in four different ways: either with iFOD2 or FACT; and with or without SIFT2. Additionally files These are named with the following scheme:
+SUBJECT_PARC_SIFT_TRACT_TYPE
+
+Where SUBJECT is the subject ID (e.g., 100206), PARC is the name of the parcellation (e.g., random200ANDfslatlas20_acpc), SIFT is the type of SIFT (either NOSIFT, indicating no tract weighting, or SIFT2, indicating SIFT2 was applied), TRACT is the tractography method (either FACT or iFOD2), and TYPE is the edge weight measure (FA for fractional anisotropy, MD for mean diffusivity, RD for radial diffusivity, length for mean length of streamlines, the TYPE field is left empty for normal streamline weights). Both .mat and .csv files are produced for each (e.g., 100206_random500ANDfslatlas20_acpc_NOSIFT_iFOD2_FA.mat is the connectivity matrix for subject 100206, for the random500ANDfslatlas20 parcellation, without SIFT2 applied, using iFOD2 tractography, and FA edge weighting).
+The following spiel details an overview of the major steps, largely taken from (Oldham et al., 2019) and (Arnatkevičiūtė et al., 2021).
+
+We used Human Connectome Project (HCP) data for 973 participants.  Data were acquired on a customized Siemens 3T “Connectome Skyra” scanner at Washington University in St Louis, Missouri, USA using a multi-shell protocol for the DWI with the following parameters: 1.25 mm3 voxel size, TR = 5520 ms, TE = 89.5 ms, FOV of 210×180 mm, 270 directions with b = 1000, 2000, 3000 s/mm2 (90 per b value), and 18 b = 0 volumes. Structural T1-weighted data were acquired with 0.7 mm3 voxels, TR = 2400 ms, TE = 2.14 ms, FOV of 224×224 mm (Glasser et al., 2013; Van Essen et al., 2012). The HCP data were processed according to the HCP minimal preprocessing pipeline, which included normalization of mean b = 0 images across diffusion acquisitions, and correction for EPI susceptibility and signal outliers, eddy-current-induced distortions, slice dropouts, gradient-nonlinearities and subject motion. T1-weighted data were corrected for gradient and readout distortions prior to being processed with Freesurfer (Glasser et al., 2013).
+
+Tractography was conducted using the Fibre Orientation Distributions (iFOD2) algorithm, as implemented in MRtrix3 (Tournier et al., 2019), which utilises Fibre Orientation Distributions (FODs) estimated for each voxel using Constrained Spherical Deconvolution (Tournier, Calamante, & Connelly, 2010; Tournier, Calamante, & Connelly, 2007; Tournier et al., 2012). This approach can improve the reconstruction of tracts in highly curved and crossing fibre regions (Tournier et al., 2010, 2012). Additionally the Fibre Assignment by Continuous Tracking (FACT) algorithm was used to run deterministic tractography. FACT propagates streamlines that track the trajectory of white matter tracts by following the primary direction of water diffusion at each voxel (Mori, Crain, Chacko, & van Zijl, 1999; Mori & van Zijl, 2002).
+
+Streamline seeds were preferentially selected from areas where streamline density was under-estimated with respect to fibre density estimates from the diffusion model (Smith, Tournier, Calamante, & Connelly, 2015a). To further improve the biological accuracy of streamlines, Anatomically Constrained Tractography was used (Smith, Tournier, Calamante, & Connelly, 2012). Whole-brain tractograms were then re-weighted using Spherically Informed Filtering of Tractograms 2 (SIFT2) (Smith et al., 2015a). This algorithm adjusts streamline weights so that they more accurately represent the underlying fibre densities as estimated from the diffusion signal, and thus provide a more physiologically meaningful measure of inter-regional connectivity. To create a structural connectivity matrix, streamlines were assigned to each of the closest regions in the parcellation within a 5mm radius of the streamline endpoints (Smith, Tournier, Calamante, & Connelly, 2015b).
+
+Finer details about the processing can be found in the HCP_TRACT.sh script. This can be run as a slurm script with the following command:
+
+sbatch ${SCRIPT_LOCATION }/HCP_TRACT.sh ${SUBJECTID} /projects/hcp1200_processed/2021/Processed ${SCRIPT_LOCATION} /projects/hcp1200_processed/2021/Preprocessed
+
+where SUBJECTID is the ID of the subject and SCRIPT_LOCATION is wherever the script is located, along with the “Nodes” and “Functions” directories
+
+**References:**
+Arnatkevičiūtė, A., Fulcher, B. D., Oldham, S., Tiego, J., Paquola, C., Gerring, Z., … Fornito, A. (2021). Genetic influences on hub connectivity of the human connectome. Nature Communications, 12(1), 4237. https://doi.org/10.1038/s41467-021-24306-2
+
+Behrens, T. E. J., Johansen-Berg, H., Woolrich, M. W., Smith, S. M., Wheeler-Kingshott, C. A. M., Boulby, P. A., … Matthews, P. M. (2003). Non-invasive mapping of connections between human thalamus and cortex using diffusion imaging. Nature Neuroscience, 6(7), 750–757. https://doi.org/10.1038/nn1075
+
+Behrens, T. E. J., Woolrich, M. W., Jenkinson, M., Johansen-Berg, H., Nunes, R. G., Clare, S., … Smith, S. M. (2003). Characterization and Propagation of Uncertainty in Diffusion-Weighted MR Imaging. Magnetic Resonance in Medicine, 50(5), 1077–1088. https://doi.org/10.1002/mrm.10609
+
+Desikan, R. S., Ségonne, F., Fischl, B., Quinn, B. T., Dickerson, B. C., Blacker, D., … Killiany, R. J. (2006). An automated labeling system for subdividing the human cerebral cortex on MRI scans into gyral based regions of interest. NeuroImage, 31(3), 968–980. https://doi.org/10.1016/j.neuroimage.2006.01.021
+
+Fischl, B. (2012). FreeSurfer. NeuroImage, 62(2), 774–781. https://doi.org/10.1016/j.neuroimage.2012.01.021
+
+Fischl, B., Salat, D. H., Busa, E., Albert, M., Dieterich, M., Haselgrove, C., … Dale, A. M. (2002). Whole brain segmentation: Automated labeling of neuroanatomical structures in the human brain. Neuron, 33(3), 341–355. https://doi.org/10.1016/S0896-6273(02)00569-X
+
+Glasser, M. F., Coalson, T. S., Robinson, E. C., Hacker, C. D., Harwell, J., Yacoub, E., … Van Essen, D. C. (2016). A multi-modal parcellation of human cerebral cortex. Nature, 536(7615), 171–178. https://doi.org/10.1038/nature18933
+
+Glasser, M. F., Sotiropoulos, S. N., Wilson, J. A., Coalson, T. S., Fischl, B., Andersson, J. L., … Jenkinson, M. (2013). The minimal preprocessing pipelines for the Human Connectome Project. NeuroImage, 80, 105–124. https://doi.org/10.1016/j.neuroimage.2013.04.127
+
+Jenkinson, M., Beckmann, C. F., Behrens, T. E. J., Woolrich, M. W., & Smith, S. M. (2012). FSL. NeuroImage, 62(2), 782–790. https://doi.org/10.1016/j.neuroimage.2011.09.015
+
+Mori, S., Crain, B. J., Chacko, V. P., & van Zijl, P. C. (1999). Three-dimensional tracking of axonal projections in the brain by magnetic resonance imaging. Annals of Neurology, 45(2), 265–269. https://doi.org/10.1002/1531-8249(199902)45:2<265::AID-ANA21>3.0.CO;2-3
+
+Mori, S., & van Zijl, P. C. M. (2002). Fiber tracking: principles and strategies - a technical review. NMR in Biomedicine, 15(7–8), 468–480. https://doi.org/10.1002/nbm.781
+
+Notter, M. (2019). Parcellation Fragmenter. Retrieved from https://github.com/miykael/parcellation_fragmenter
+
+Oldham, S., Arnatkevic̆iūtė, A., Smith, R. E., Tiego, J., Bellgrove, M. A., & Fornito, A. (2020). The efficacy of different preprocessing steps in reducing motion-related confounds in diffusion MRI connectomics. NeuroImage, 222, 117252. https://doi.org/10.1016/j.neuroimage.2020.117252
+
+Oldham, S., Fulcher, B., Parkes, L., Arnatkevic̆iūtė, A., Suo, C., & Fornito, A. (2019). Consistency and differences between centrality measures across distinct classes of networks. PLOS ONE, 14(7), e0220061. https://doi.org/10.1371/journal.pone.0220061
+
+Schaefer, A., Kong, R., Gordon, E. M., Laumann, T. O., Zuo, X.-N., Holmes, A. J., … Yeo, B. T. T. (2018). Local-Global Parcellation of the Human Cerebral Cortex from Intrinsic Functional Connectivity MRI. Cerebral Cortex, 28(9), 3095–3114. https://doi.org/10.1093/cercor/bhx179
+
+Smith, R. E., Tournier, J. D., Calamante, F., & Connelly, A. (2012). Anatomically-constrained tractography: Improved diffusion MRI streamlines tractography through effective use of anatomical information. NeuroImage, 62(3), 1924–1938. https://doi.org/10.1016/j.neuroimage.2012.06.005
+
+Smith, R. E., Tournier, J. D., Calamante, F., & Connelly, A. (2015a). SIFT2: Enabling dense quantitative assessment of brain white matter connectivity using streamlines tractography. NeuroImage, 119, 338–351. https://doi.org/10.1016/j.neuroimage.2015.06.092
+
+Smith, R. E., Tournier, J. D., Calamante, F., & Connelly, A. (2015b). The effects of SIFT on the reproducibility and biological accuracy of the structural connectome. NeuroImage, 104, 253–265. https://doi.org/10.1016/j.neuroimage.2014.10.004
+
+Sotiropoulos, S. N., Jbabdi, S., Xu, J., Andersson, J. L., Moeller, S., Auerbach, E. J., … Behrens, T. E. J. (2013). Advances in diffusion MRI acquisition and processing in the Human Connectome Project. NeuroImage, 80, 125–143. https://doi.org/10.1016/j.neuroimage.2013.05.057
+
+Tournier, J. D., Calamante, F., & Connelly, A. (2007). Robust determination of the fibre orientation distribution in diffusion MRI: Non-negativity constrained super-resolved spherical deconvolution. NeuroImage, 35(4), 1459–1472. https://doi.org/10.1016/j.neuroimage.2007.02.016
+
+Tournier, J. D., Calamante, F., & Connelly, A. (2010). Improved probabilistic streamlines tractography by 2nd order integration over fibre orientation distributions. Proceedings of the International Society for Magnetic Resonance in Medicine, 1670.
+
+Tournier, J. D., Calamante, F., & Connelly, A. (2012). MRtrix: Diffusion tractography in crossing fiber regions. International Journal of Imaging Systems and Technology, 22(1), 53–66. https://doi.org/10.1002/ima.22005
+
+Tournier, J. D., Smith, R., Raffelt, D., Tabbara, R., Dhollander, T., Pietsch, M., … Connelly, A. (2019). MRtrix3: A fast, flexible and open software framework for medical image processing and visualisation. NeuroImage, 202, 116137. https://doi.org/10.1016/j.neuroimage.2019.116137
+
+Tziortzi, A. C., Haber, S. N., Searle, G. E., Tsoumpas, C., Long, C. J., Shotbolt, P., … Gunn, R. N. (2014). Connectivity-based functional analysis of dopamine release in the striatum using diffusion-weighted MRI and positron emission tomography. Cerebral Cortex, 24(5), 1165–1177. https://doi.org/10.1093/cercor/bhs397
+
+Van Essen, D. C., Ugurbil, K., Auerbach, E., Barch, D., Behrens, T. E. J., Bucholz, R., … Yacoub, E. (2012). The Human Connectome Project: A data acquisition perspective. NeuroImage, 62(4), 2222–2231. https://doi.org/10.1016/j.neuroimage.2012.02.018
+
+
